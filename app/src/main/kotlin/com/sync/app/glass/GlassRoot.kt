@@ -81,6 +81,7 @@ fun GlassRoot(webView: WebView, c: GlassController) {
             s.search?.let { SearchGlass(it, backdrop, c) }
         }
         s.ctx?.let { ContextMenuGlass(it, backdrop, c) }
+        s.edit?.let { EditMenuGlass(it, backdrop, c) }
         s.dialog?.let { DialogGlass(it, backdrop, c) }
         s.confirm?.let { ConfirmGlass(it, backdrop, c) }
         s.add?.let { AddModalGlass(it, backdrop, c) }
@@ -159,7 +160,7 @@ internal class RegionRecorder(private val c: GlassController) {
     private fun buildPath(s: GlassState, d: Float, scroll: Float): Path? {
         val pad = PAD_DP * d
         val rects = listOfNotNull(
-            s.nav?.rect, s.bar?.rect, s.search?.let { it.rect.copy(y = maxOf(it.pin, it.rect.y - scroll)) }, s.ctx?.rect, s.dialog?.rect, s.confirm?.rect, s.add?.rect
+            s.nav?.rect, s.bar?.rect, s.search?.let { it.rect.copy(y = maxOf(it.pin, it.rect.y - scroll)) }, s.ctx?.rect, s.edit?.rect, s.dialog?.rect, s.confirm?.rect, s.add?.rect
         )
         if (rects.isEmpty()) return null
         return Path().apply {
@@ -169,5 +170,5 @@ internal class RegionRecorder(private val c: GlassController) {
         }
     }
 
-    private companion object { const val PAD_DP = 96f }
+    private companion object { const val PAD_DP = 72f }
 }
