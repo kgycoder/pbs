@@ -14,6 +14,7 @@
         rel="stylesheet">
     <script>if(window.GlassBridge)document.documentElement.classList.add('glass-native');</script>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="sync-ux.css">
     <!-- ═══════════════════════════════════════════════════════════════════════
          BACKGROUND PLAYBACK — Page Visibility API complete override
          MUST be placed BEFORE the YouTube IFrame API script.
@@ -666,6 +667,8 @@
 
 
     <script src="app.js"></script>
+    <!-- 곡 편집 모드(길게 누르기/순서 변경) + 성능 거버너. app.js 로직은 수정하지 않음 -->
+    <script src="sync-ux.js"></script>
     <!-- Liquid Glass: 네이티브(Compose + Kyant backdrop) 글래스 레이어와의 상태/입력 브릿지. app.js 로직은 건드리지 않음 -->
     <script src="glass-bridge.js"></script>
 
