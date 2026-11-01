@@ -142,6 +142,12 @@
             };
         }
 
+        /* 곡 편집 모드(길게 누르기)의 Context Menu — sync-ux.js 가 위치/상태를 계산해 준다 */
+        if (window.__trackEdit) {
+            const e = window.__trackEdit.snapshot();
+            if (e) st.edit = e;
+        }
+
         /* 이름 입력 다이얼로그 */
         if ($('pl-dialog-overlay') && $('pl-dialog-overlay').classList.contains('on')) {
             const d = $('pl-dialog'), inp = $('pl-dialog-input');
@@ -200,6 +206,8 @@
         geomTimer = setTimeout(() => { geomDirty = true; schedule(); }, (ms || 700) + 60);
         schedule();
     }
+
+    window.__glassKick = kick;   // sync-ux.js(곡 편집 모드)가 상태 변화를 알릴 때 사용
 
     /* 레이아웃/상태에 실제 영향이 있는 변화만 반응 (재생 진행/가사 하이라이트 등은 무시 → 메인 스레드 부하 0) */
     const OVERLAYS = '#pl-ctx-menu,#pl-dialog-overlay,#pl-confirm-overlay,#pl-add-modal-overlay';
@@ -313,6 +321,10 @@
                         const items = document.querySelectorAll('#pl-ctx-list .pl-ctx-item');
                         if (items[c.i]) items[c.i].click();
                     }
+                    break;
+                }
+                case 'edit': {
+                    if (window.__trackEdit) window.__trackEdit.cmd(c.a);
                     break;
                 }
                 case 'dlg': if (c.a === 'ok') plDialogConfirm(); else plDialogCancel(); break;
