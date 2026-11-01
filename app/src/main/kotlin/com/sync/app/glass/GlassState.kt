@@ -17,6 +17,11 @@ data class CssRect(val x: Float, val y: Float, val w: Float, val h: Float)
     val rect: CssRect, val art: String, val title: String, val channel: String,
     val playing: Boolean, val fav: Boolean, val accent: Long, val progress: Float
 )
+/** 플레이리스트 곡 편집 모드의 Context Menu (곡 삭제 / 곡 즐겨찾기). [rect] 는 sync-ux.js 가 곡 행 옆에 계산해 준 위치. */
+@Immutable data class EditState(
+    val rect: CssRect, val up: Boolean, val show: Boolean, val fav: Boolean,
+    val delLabel: String, val favLabel: String
+)
 @Immutable data class CtxState(val rect: CssRect, val title: String, val items: List<String>, val newLabel: String)
 @Immutable data class DialogState(
     val rect: CssRect, val title: String, val value: String, val placeholder: String,
@@ -41,6 +46,7 @@ data class GlassState(
     val search: SearchState? = null,
     val bar: BarState? = null,
     val ctx: CtxState? = null,
+    val edit: EditState? = null,
     val dialog: DialogState? = null,
     val confirm: ConfirmState? = null,
     val add: AddModalState? = null
@@ -62,6 +68,10 @@ data class GlassState(
                 },
                 ctx = o.optJSONObject("ctx")?.let {
                     CtxState(rect(it), it.optString("title"), strings(it.optJSONArray("items")), it.optString("new"))
+                },
+                edit = o.optJSONObject("edit")?.let {
+                    EditState(rect(it), it.optBoolean("up"), it.optBoolean("show", true), it.optBoolean("fav"),
+                        it.optString("del"), it.optString("favL"))
                 },
                 dialog = o.optJSONObject("dlg")?.let {
                     DialogState(rect(it), it.optString("title"), it.optString("value"), it.optString("ph"),
