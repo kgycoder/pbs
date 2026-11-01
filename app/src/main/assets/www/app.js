@@ -73,6 +73,7 @@ function _npIsOpen() {
 function bgLoop() {
     if (window.__bgMode) { _bgRafId = null; return; }   // 백그라운드: 프레임 루프 중단
     _bgRafId = requestAnimationFrame(bgLoop);
+    if (window.__perfTick) window.__perfTick(performance.now());   // sync-ux.js: 프레임 시간 감시(별도 rAF 없이 재사용)
     BG.f++;
     BG.h += (BG.th - BG.h) * .005;
     BG.e += (BG.te - BG.e) * .014;
@@ -92,7 +93,7 @@ function bgLoop() {
     // 실제 그리기는 2프레임에 1번(30fps). 매 프레임 전체 화면을 다시 그리면 WebView 합성과
     // 네이티브 글래스(배경 캡처·블러)까지 60fps 로 다시 계산되어 시간이 지날수록 부하/발열이 커진다.
     // 일시정지 중에는 오브 이동이 프레임당 1px 미만이고 위에 blur(120px) 오버레이가 덮여 있어 10fps 로도 구분이 안 된다.
-    if (BG.f % (BG.playing ? 2 : 6)) return;
+    if (BG.f % (window.__bgEvery ? window.__bgEvery(BG.playing) : (BG.playing ? 2 : 6))) return;   // sync-ux.js: 20fps/10fps, 조작 없음·부하 시 10fps/6fps
     if (performance.now() - window.__lastScrollAt < 160) return;   // 스크롤 중엔 그리기 생략
     // 전체화면 플레이어(#np, 불투명)가 덮고 있는 동안엔 보이지 않으므로 그리지 않는다.
     if (_npIsOpen()) return;
@@ -735,12 +736,14 @@ function updateNpColor() {
 
     if (S.playing) {
         if (!_vbList || !_vbList.length) _vbList = document.querySelectorAll('.vb');
+        const vbCol = `hsl(${h},${s}%,62%)`;
         _vbList.forEach((b, i) => {
-            b.style.background = `hsl(${h},${s}%,62%)`;
+            if (b._col !== vbCol) { b._col = vbCol; b.style.background = vbCol; }   // 값이 바뀔 때만 쓴다(50ms 마다 스타일 무효화 방지)
             if (beat > .06) {
                 const ht = 1 + beat * en * (0.8 + Math.sin(i * 1.4 + BG.f * .08) * 0.5);
                 b.style.transform = `scaleY(${ht.toFixed(3)})`;
-            } else b.style.transform = '';
+            } else if (b._tf) { b._tf = false; b.style.transform = ''; }
+            if (beat > .06) b._tf = true;
         });
     }
 
@@ -1924,14 +1927,15 @@ function startTick() {
             const ovb = document.getElementById('ov-pb');
             const lvpb = document.getElementById('np-lv-pb');
             if (!pb?.classList.contains('dragging')) pb?._setFill?.(pct);
-            if (!npb?.classList.contains('dragging')) npb?._setFill?.(pct);
+            // NP 가 닫혀 있으면 보이지 않으므로 rAF 보간 없이 즉시 값만 맞춘다(재생 내내 60fps rAF 체인이 돌던 문제)
+            if (!npb?.classList.contains('dragging')) npb?._setFill?.(pct, !_npIsOpen());
             if (OV.active && !ovb?.classList.contains('dragging')) ovb?._setFill?.(pct);
             if (LV.active && !lvpb?.classList.contains('dragging')) lvpb?._setFill?.(pct);
             setT('p-cur', S.cur); setT('np-cur', S.cur);
             setT('p-tot', S.dur); setT('np-tot', S.dur);
             if (OV.active) { setT('ov-p-cur', S.cur); setT('ov-p-tot', S.dur); }
             const bpf = document.getElementById('bar-prog-fill');
-            if (bpf) bpf.style.width = pct.toFixed(2) + '%';
+            if (bpf && !window.GlassBridge) bpf.style.width = pct.toFixed(2) + '%';   // 앱에서는 DOM 미니 플레이어가 투명(네이티브 글래스가 표시) → 갱신 불필요
             syncMediaSession(true);
         } catch { }
     }, 250);
